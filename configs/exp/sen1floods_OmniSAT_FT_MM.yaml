@@ -1,0 +1,34 @@
+# @package _global_
+
+defaults:
+  - override /dataset: Sen1floods11
+  - override /model/network: Fine_tuning
+
+defaults:
+  - override /dataset: Sen1floods11
+  - override /model/network/encoder: Any_Base
+  - override /model: SemSeg
+  - override /model/network: Fine_tuning_SemSeg
+  - override /model/loss: CrossEntropyIgnore
+  - override /model/train_metrics: metrics_seg_pangaea
+  - override /model/val_metrics: metrics_seg_pangaea
+  - override /model/test_metrics: metrics_seg_pangaea
+
+model:
+  name: "OmniSAT_FineTuning_MM"
+  optimizer:
+    lr: 2e-4
+  network:
+    instance:
+      path: ${paths.log_dir}/TreeSat_OmniSAT/checkpoints/epoch_151.ckpt
+
+callbacks:
+  early_stopping:
+    monitor: "val/F1_Score_macro"
+    mode: "max"
+    patience: 10
+
+modalities:
+  - "aerial"
+  - "s2"
+  # - "s1-asc"    
