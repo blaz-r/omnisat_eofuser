@@ -1,5 +1,5 @@
-data
+/data
 .vscode
 logs
 *.log
-.project-root
+*.pyc
