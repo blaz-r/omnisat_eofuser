@@ -6,11 +6,13 @@ class MAEOmni(nn.Module):
     """
     Masked Autoencoder part for OmniSat pretraining.
     """
-    def __init__(self, 
-                 encoder, 
-                 decoder, 
-                 embed_dim: int = 256,
-                ):
+
+    def __init__(
+        self,
+        encoder,
+        decoder,
+        embed_dim: int = 256,
+    ):
         super().__init__()
         # --------------------------------------------------------------------------
         # MAE encoder specifics
@@ -42,11 +44,13 @@ class MAEOmni(nn.Module):
         """
         N, L, D = x.shape  # batch, length, dim
         len_keep = int(L * (1 - mask_ratio))
-        
+
         noise = torch.rand(N, L, device=x.device)  # noise in [0, 1]
-        
+
         # sort noise for each sample
-        ids_shuffle = torch.argsort(noise, dim=1)  # ascend: small is keep, large is remove
+        ids_shuffle = torch.argsort(
+            noise, dim=1
+        )  # ascend: small is keep, large is remove
         ids_restore = torch.argsort(ids_shuffle, dim=1)
 
         # keep the first subset
@@ -69,12 +73,12 @@ class MAEOmni(nn.Module):
         tokens, out = self.encoder.forward_proj(x)
         tokens, mask, ids_restore = self.random_masking(tokens, mask_ratio)
         tokens = self.encoder.forward_transformer(tokens)
-        out['mm_tokens'] = tokens
+        out["mm_tokens"] = tokens
         return out, mask
 
     def forward_decoder(self, out):
         # embed tokens
-        x = self.decoder(out['mm_tokens'][:, 1:, :], out)
+        x = self.decoder(out["mm_tokens"][:, 1:, :], out)
         return x
 
     def forward(self, imgs, mask_ratio=0.75):
