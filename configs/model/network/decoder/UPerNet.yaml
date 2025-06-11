@@ -1,0 +1,5 @@
+_target_: models.networks.upernet.UperNetHead
+in_channels: ${model.network.encoder.embed_dim}
+out_channels: ${dataset.num_classes}
+out_size: ${dataset.train_transform.size}
+n_input: 4

@@ -1,6 +1,7 @@
 from typing import Callable, Optional
 from functools import partial
 
+import einops
 import torch
 import torch.nn as nn
 from timm.layers import trunc_normal_, PatchDropout
@@ -50,9 +51,12 @@ class OmniModule(nn.Module):
         drop_path_rate: float = 0.0,
         attn_drop_rate: float = 0.0,
         norm_layer: Optional[Callable] = None,
+        return_layers: list | None = None,
     ):
         super(OmniModule, self).__init__()
         self.modalities = modalities
+
+        self.return_layers = return_layers
 
         self.num_prefix_tokens = 1 if class_token else 0
         self.num_patches = num_patches + self.num_prefix_tokens
@@ -168,6 +172,8 @@ class OmniModule(nn.Module):
     def forward(self, x):
         """
         Complete forward function during training
+
+        param return_layers: if None, return last, otherwise return outputs with indices in ret_layers
         """
         tokens = []
         for modality in self.modalities:
@@ -196,6 +202,19 @@ class OmniModule(nn.Module):
             tokens = torch.cat((cls_tokens, tokens), dim=1)
         tokens = self.patch_drop(tokens)
         tokens = self.norm_pre(tokens)
-        for blk in self.blocks:
-            tokens = blk(tokens)
-        return tokens
+        if self.return_layers is not None:
+            ret_list = []
+            for i, blk in enumerate(self.blocks):
+                tokens = blk(tokens)
+                if i in self.return_layers:
+                    # NLC, remove cls token
+                    patch_tokens = tokens[:, 1:]
+                    _, l, _ = patch_tokens.shape
+                    side = int(l ** 0.5)
+                    patch_tokens = einops.rearrange(patch_tokens, 'b (h w) c -> b c h w', h=side, w=side)
+                    ret_list.append(patch_tokens)
+            return ret_list
+        else:
+            for blk in self.blocks:
+                tokens = blk(tokens)
+            return tokens

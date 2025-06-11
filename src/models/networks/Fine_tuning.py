@@ -22,6 +22,7 @@ class Fine(nn.Module):
     """
     def __init__(self,
                  encoder: torch.nn.Module,
+                 decoder: torch.nn.Module | None,
                  path: str = '',
                  output_size: int = 256,
                  inter_dim: list = [],
@@ -83,6 +84,8 @@ class Fine(nn.Module):
             for param in self.model.parameters():
                     param.requires_grad = False
 
+        self.decoder = decoder
+
         # set n_class to 0 if we want headless model
         self.n_class = n_class
         if n_class:
@@ -101,6 +104,14 @@ class Fine(nn.Module):
                 layers = [nn.Linear(self.size, n_class)]
             self.head = nn.Sequential(*layers)
 
+    def linear_decode(self, x, h, w):
+        # NLC
+        x = x[:, 1:]
+        _, l, _ = x.shape
+        side = int(l ** 0.5)
+        x = einops.rearrange(x, 'b (h w) c -> b c h w', h=side, w=side)
+        return F.upsample(x, size=(h, w), mode='bilinear')
+
     def forward(self,x):
         """
         Forward pass of the network. Perform pooling of tokens after transformer
@@ -115,16 +126,14 @@ class Fine(nn.Module):
                 x ,_ = torch.max(x[:, 1:],1)
             else:
                 x = x[:, 0]
-        if self.n_class:
+        if self.n_class and not self.decoder:
             x = self.head(x)
 
         if self.lin_seg:
-            # NLC
-            x = x[:, 1:]
-            _, l, _ = x.shape
-            side = int(l**0.5)
-            x = einops.rearrange(x, 'b (h w) c -> b c h w', h=side, w=side)
-            x = F.upsample(x, size=(h, w), mode='bilinear')
+            return self.linear_decode(x, h, w)
+        if self.decoder:
+            return self.decoder(x)
+
         return x
 
 

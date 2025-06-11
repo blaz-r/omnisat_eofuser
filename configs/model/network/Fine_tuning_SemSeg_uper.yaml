@@ -1,10 +1,11 @@
 defaults:
   - encoder: Omni
+  - decoder: UPerNet
 
 instance:
   _target_: models.networks.Fine_tuning.Fine
   encoder: ${model.network.encoder}
-  decoder: null
+  decoder: ${model.network.decoder}
   path: ''
   output_size: ${model.network.encoder.embed_dim}
   inter_dim: []
@@ -14,6 +15,6 @@ instance:
   modalities: ${modalities}
   last_block: False
   pooling_method: null
-  lin_seg: True
+  lin_seg: False
   proj_only: False
   name: 'encoder'

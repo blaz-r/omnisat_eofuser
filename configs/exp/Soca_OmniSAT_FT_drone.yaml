@@ -3,13 +3,13 @@
 defaults:
   - override /dataset: SocaFT
   - override /model: SemSeg
-  - override /model/network: Fine_tuning_SemSeg
+  - override /model/network: Fine_tuning_SemSeg_uper
   - override /model/train_metrics: metrics_seg_pangaea
   - override /model/val_metrics: metrics_seg_pangaea
   - override /model/test_metrics: metrics_seg_pangaea
   - override /model/loss: CrossEntropyIgnore
 
-#fast_dev_run: True
+fast_dev_run: True
 max_epochs: 10
 
 trainer:
@@ -20,6 +20,9 @@ dataset:
 
 model:
   name: "OmniSAT_soca_droneFT"
+  network:
+    encoder:
+      return_layers: [0, 1, 3, 5]
   optimizer:
     lr: 1e-4
 
