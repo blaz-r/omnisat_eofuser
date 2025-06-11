@@ -99,7 +99,7 @@ class TreeSAT(Dataset):
         self.partition = partition
         self.modalities = modalities
         self.mono_strict = mono_strict
-        data_path = path + split + "_filenames.lst"
+        data_path = path + split + "_filenames_mono.lst"
         with open(data_path, "r") as file:
             self.data_list = [line.strip() for line in file.readlines()]
         self.load_labels(classes)
@@ -137,67 +137,8 @@ class TreeSAT(Dataset):
 
         if "aerial" in self.modalities:
             with rasterio.open(self.path + "aerial/" + name) as f:
-                output["aerial"] = torch.FloatTensor(f.read())
-
-        # with h5py.File(
-        #     self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-        # ) as file:
-        #     if "s1-asc" in self.modalities:
-        #         output["s1-asc_dates"] = day_number_in_year(
-        #             file["sen-1-asc-products"][:]
-        #         )
-        #     if "s1-des" in self.modalities:
-        #         output["s1-des_dates"] = day_number_in_year(
-        #             file["sen-1-des-products"][:]
-        #         )
-        #     if "s1" in self.modalities:
-        #         s1_asc_dates = day_number_in_year(file["sen-1-asc-products"][:])
-        #         s1_des_dates = day_number_in_year(file["sen-1-des-products"][:])
-        #     if "s2" in self.modalities:
-        #         output["s2"] = torch.tensor(file["sen-2-data"][:])
-        #         output["s2_dates"] = day_number_in_year(
-        #             file["sen-2-products"][:], place=2
-        #         )
-        #         N = len(output["s2_dates"])
-        #         if N > 50:
-        #             random_indices = torch.randperm(N)[:50]
-        #             output["s2"] = output["s2"][random_indices]
-        #             output["s2_dates"] = output["s2_dates"][random_indices]
-
-        # if "s1-asc" in self.modalities:
-        #     output["s1-asc"] = torch.load(
-        #         self.path + "s1-asc/" + ".".join(name.split(".")[:-1]) + ".pth"
-        #     )[:, :2, :, :]
-        #     N = len(output["s1-asc_dates"])
-        #     if N > 50:
-        #         random_indices = torch.randperm(N)[:50]
-        #         output["s1-asc"] = output["s1-asc"][random_indices]
-        #         output["s1-asc_dates"] = output["s1-asc_dates"][random_indices]
-        #
-        # if "s1-des" in self.modalities:
-        #     output["s1-des"] = torch.load(
-        #         self.path + "s1-des/" + ".".join(name.split(".")[:-1]) + ".pth"
-        #     )[:, :2, :, :]
-        #     N = len(output["s1-des_dates"])
-        #     if N > 50:
-        #         random_indices = torch.randperm(N)[:50]
-        #         output["s1-des"] = output["s1-des"][random_indices]
-        #         output["s1-des_dates"] = output["s1-des_dates"][random_indices]
-        #
-        # if "s1" in self.modalities:
-        #     s1_asc = torch.load(
-        #         self.path + "s1-asc/" + ".".join(name.split(".")[:-1]) + ".pth"
-        #     )[:, :2, :, :]
-        #     s1_des = torch.load(
-        #         self.path + "s1-des/" + ".".join(name.split(".")[:-1]) + ".pth"
-        #     )[:, :2, :, :]
-        #     output["s1"] = torch.cat([s1_asc, s1_des], dim=0)
-        #     output["s1_dates"] = torch.cat([s1_asc_dates, s1_des_dates], dim=0)
-        #     N = len(output["s1_dates"])
-        #     if N > 50:
-        #         random_indices = torch.randperm(N)[:50]
-        #         output["s1"] = output["s1"][random_indices]
-        #         output["s1_dates"] = output["s1_dates"][random_indices]
+                aer_4ch = torch.FloatTensor(f.read())
+                output["aerial"] = aer_4ch[:3, ...]
 
         if "s1-mono" in self.modalities:
             with rasterio.open(self.path + "s1/60m/" + name) as f:
@@ -214,72 +155,6 @@ class TreeSAT(Dataset):
             output["s2-mono"] = torch.FloatTensor(numpy_array)
             if self.mono_strict:
                 output["s2-mono"] = output["s2-mono"][:10, :, :]
-
-        if "s2-4season-median" in self.modalities:
-            with h5py.File(
-                self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-            ) as file:
-                output_inter = torch.tensor(file["sen-2-data"][:])
-                dates = day_number_in_year(file["sen-2-products"][:], place=2)
-            l = []
-            for i in range(4):
-                mask = (dates >= 92 * i) & (dates < 92 * (i + 1))
-                if sum(mask) > 0:
-                    r, _ = torch.median(output_inter[mask], dim=0)
-                    l.append(r)
-                else:
-                    l.append(
-                        torch.zeros(
-                            (
-                                output_inter.shape[1],
-                                output_inter.shape[-2],
-                                output_inter.shape[-1],
-                            )
-                        )
-                    )
-            output["s2-4season-median"] = torch.cat(l)
-
-        if "s2-median" in self.modalities:
-            with h5py.File(
-                self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-            ) as file:
-                output["s2-median"], _ = torch.median(
-                    torch.tensor(file["sen-2-data"][:]), dim=0
-                )
-
-        if "s1-4season-median" in self.modalities:
-            with h5py.File(
-                self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-            ) as file:
-                dates = day_number_in_year(file["sen-1-asc-products"][:])
-            output_inter = torch.load(
-                self.path + "s1-asc/" + ".".join(name.split(".")[:-1]) + ".pth"
-            )[:, :2, :, :]
-            l = []
-            for i in range(4):
-                mask = (dates >= 92 * i) & (dates < 92 * (i + 1))
-                if sum(mask) > 0:
-                    r, _ = torch.median(output_inter[mask], dim=0)
-                    l.append(r)
-                else:
-                    l.append(
-                        torch.zeros(
-                            (
-                                output_inter.shape[1],
-                                output_inter.shape[-2],
-                                output_inter.shape[-1],
-                            )
-                        )
-                    )
-            output["s1-4season-median"] = torch.cat(l)
-
-        if "s1-median" in self.modalities:
-            output["s1-median"], _ = torch.median(
-                torch.load(
-                    self.path + "s1-asc/" + ".".join(name.split(".")[:-1]) + ".pth"
-                )[:, :2, :, :],
-                dim=0,
-            )
 
         return self.transform(output)
 

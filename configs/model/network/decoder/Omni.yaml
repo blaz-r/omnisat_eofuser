@@ -3,7 +3,7 @@ modalities: ${modalities}
 projectors:
   aerial: 
     _target_: models.networks.decoders.DecoderDeconvAerial
-    in_channels: 4
+    in_channels: 3
     embed_dim: ${model.network.encoder.embed_dim}
   s2:
     _target_: models.networks.decoders.DecoderSentinel

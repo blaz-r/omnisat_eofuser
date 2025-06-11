@@ -82,6 +82,8 @@ mkdir logs
 
 Every experience of the paper has its own config. Feel free to explore configs/exp folder
 
+
+Pass your data path to files with paths.data_path=<path>
 ```bash
 python src/train.py exp=TSAITS_OmniSAT #to run OmniSAT pretraining on TreeSatAI-TS
 #trainer.devices=X to change the number of GPU you want to train on

@@ -23,6 +23,6 @@ model:
     lr: 1e-4
 
 modalities:
-#  - "aerial"
-  - "s2-mono"
+  - "aerial"
+#  - "s2-mono"
 #  - "s1-mono"
