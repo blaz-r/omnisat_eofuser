@@ -106,7 +106,7 @@ class Fine(nn.Module):
         Forward pass of the network. Perform pooling of tokens after transformer
         according to global_pool argument.
         """
-        _, _, h, w = x["label"].shape
+        h, w = x["label"].shape[-2:]
         x = self.model(x)
         if self.global_pool:
             if self.global_pool == 'avg':

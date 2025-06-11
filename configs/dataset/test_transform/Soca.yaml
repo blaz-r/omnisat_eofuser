@@ -1,3 +1,4 @@
 _target_: data.transforms.transform.TransformSocaFT
 p: 0.0
-size: 300
+size: 500
+size_s2: 10

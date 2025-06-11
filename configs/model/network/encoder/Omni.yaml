@@ -82,7 +82,7 @@ projectors:
     return_att: True
     positional_encoding: True
 
-num_patches: 36
+num_patches: 100
 embed_dim: 256
 depth: 6
 num_heads: 16

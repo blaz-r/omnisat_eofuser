@@ -148,6 +148,7 @@ class TreeSAT(Dataset):
             if self.mono_strict:
                 output["s1-mono"] = output["s1-mono"][:2, :, :]
 
+        # B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12
         if "s2-mono" in self.modalities:
             with rasterio.open(self.path + "s2/60m/" + name) as f:
                 numpy_array = f.read()
