@@ -34,6 +34,26 @@ class MultiCrossEntropy(nn.Module):
         for modality in self.modalities:
             out['_'.join([modality, 'ce_loss'])] = self.loss(x[modality], y["label"].float())
         return out
+
+class CrossEntropyIgnore(nn.Module):
+    def __init__(self):
+        super(CrossEntropyIgnore, self).__init__()
+
+    def forward(self, x, y):
+        """
+        Args:
+            x: torch.Tensor BxN that contains the logits
+            y: dict that contains "label": torch.Tensor BxN
+        Returns:
+            torch.Tensor: CrossEntropy loss between x and y: torch.Tensor([B]) while ignoring -1 index
+        """
+        if len(y["label"].shape) > 1:
+            x = x.flatten(2)
+            # expected is N, d1, d2...
+            label = y["label"].flatten(1)
+        else:
+            label = y["label"]
+        return {"cross_entropy_loss": nn.functional.cross_entropy(x, label.long())}
     
 class BCEWithLogs(nn.Module):
     def __init__(self):
@@ -480,6 +500,7 @@ LOSSES = {
     "mil-nce": MILNCE,
     "mae-loss": MAEReconstructionLoss,
     "mae-loss_pastis": MAEReconstructionLossPastis,
+    "crossentropyignore": CrossEntropyIgnore,
 }
 AVERAGE = {False: lambda x: x, True: lambda x: x.mean(dim=-1)}
 

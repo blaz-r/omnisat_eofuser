@@ -1,5 +1,7 @@
+import einops
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 class Fine(nn.Module):
     """
@@ -28,6 +30,7 @@ class Fine(nn.Module):
                  freeze: bool = True,
                  n_class: int = 15,
                  pooling_method: str = 'token',
+                 lin_seg: bool = False,
                  modalities: list = [],
                  last_block: bool = False,
                  proj_only: bool = False,
@@ -37,32 +40,31 @@ class Fine(nn.Module):
         self.size = output_size
         self.freeze = freeze
         self.global_pool = pooling_method
+        self.lin_seg = lin_seg
 
         for i in range(len(modalities)):
             if modalities[i].split('-')[-1] == 'mono':
                 modalities[i] = '-'.join(modalities[i].split('-')[:-1])
 
-        u = torch.load(path, weights_only=False)
-        d = {}
+        if path:
+            u = torch.load(path, weights_only=False)
+            d = {}
 
-        for key in u["state_dict"].keys():
-            if name in key:
-                if 'projector' in key:
-                    if any([modality in key for modality in modalities]):
-                        d['.'.join(key.split('.')[2:])] = u["state_dict"][key]
-                else:
-                    if not(proj_only):
-                        d['.'.join(key.split('.')[2:])] = u["state_dict"][key]
+            for key in u["state_dict"].keys():
+                if name in key:
+                    if 'projector' in key:
+                        if any([modality in key for modality in modalities]):
+                            d['.'.join(key.split('.')[2:])] = u["state_dict"][key]
+                    else:
+                        if not(proj_only):
+                            d['.'.join(key.split('.')[2:])] = u["state_dict"][key]
 
-        torch.save(d, '/home/filip/OmniSat/logs/TreeSat_OmniSAT/checkpoints/omnisat_state_dict.pth')
+            # torch.save(d, '/home/filip/OmniSat/logs/TreeSat_OmniSAT/checkpoints/omnisat_state_dict.pth')
 
-
-        if not(proj_only):
-            encoder.load_state_dict(d)
-        else:
-            encoder.load_state_dict(d, strict=False)
-
-
+            if not(proj_only):
+                encoder.load_state_dict(d)
+            else:
+                encoder.load_state_dict(d, strict=False)
 
         self.model = encoder
 
@@ -104,6 +106,7 @@ class Fine(nn.Module):
         Forward pass of the network. Perform pooling of tokens after transformer
         according to global_pool argument.
         """
+        _, _, h, w = x["label"].shape
         x = self.model(x)
         if self.global_pool:
             if self.global_pool == 'avg':
@@ -114,6 +117,14 @@ class Fine(nn.Module):
                 x = x[:, 0]
         if self.n_class:
             x = self.head(x)
+
+        if self.lin_seg:
+            # NLC
+            x = x[:, 1:]
+            _, l, _ = x.shape
+            side = int(l**0.5)
+            x = einops.rearrange(x, 'b (h w) c -> b c h w', h=side, w=side)
+            x = F.upsample(x, size=(h, w), mode='bilinear')
         return x
 
 

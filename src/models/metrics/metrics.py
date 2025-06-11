@@ -229,13 +229,14 @@ class SegPangaea(Metric):
     """
 
     def __init__(self, num_classes, ignore_index):
+        super().__init__()
         self.num_classes = num_classes
         self.ignore_index = ignore_index
         self.confusion_matrix = torch.zeros(num_classes, num_classes)
 
     def update(self, pred, gt):
-        label = gt['label'].flatten(1, 2)
-        pred = torch.argmax(pred, dim=1).flatten(1, 2)
+        label = gt['label'].flatten(1).long()
+        pred = torch.argmax(pred, dim=1).flatten(1)
         valid_mask = label != self.ignore_index
         pred, target = pred[valid_mask], label[valid_mask]
         count = torch.bincount(

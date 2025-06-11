@@ -1,5 +1,5 @@
 defaults:
-  - encoder: PseTae
+  - encoder: Omni
   - mlp: mlpSemSeg
 
 instance:

@@ -4,7 +4,7 @@ projectors:
   aerial:
     _target_: models.networks.encoder.utils.patch_embeddings.PatchEmbed
     patch_size: 50
-    in_chans: 4
+    in_chans: 3
     embed_dim: 256
     bias: ${model.network.encoder.pre_norm}
     res: True

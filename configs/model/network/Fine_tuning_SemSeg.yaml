@@ -1,5 +1,5 @@
 defaults:
-  - encoder: Any
+  - encoder: Omni
 
 instance:
   _target_: models.networks.Fine_tuning.Fine
@@ -13,6 +13,6 @@ instance:
   modalities: ${modalities}
   last_block: False
   pooling_method: null
+  lin_seg: True
   proj_only: False
   name: 'encoder'
-  patch_size: ${model.network.encoder.scale}
