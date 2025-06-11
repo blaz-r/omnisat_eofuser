@@ -70,7 +70,9 @@ class MAEOmni(nn.Module):
         return x, mask, ids_restore
 
     def forward_encoder(self, x, mask_ratio):
+        # token list, out_dict with specific tokens
         tokens, out = self.encoder.forward_proj(x)
+        #
         tokens, mask, ids_restore = self.random_masking(tokens, mask_ratio)
         tokens = self.encoder.forward_transformer(tokens)
         out["mm_tokens"] = tokens

@@ -122,20 +122,7 @@ class SocaDataset(Dataset):
         with rasterio.open(self.path / "mask_tiles_labeled" / name) as f:
             output["label"] = torch.FloatTensor(f.read()) / 255
 
-        # with h5py.File(
-        #     self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-        # ) as file:
-        #     if "s2" in self.modalities:
-        #         output["s2"] = torch.tensor(file["sen-2-data"][:])
-        #         output["s2_dates"] = day_number_in_year(
-        #             file["sen-2-products"][:], place=2
-        #         )
-        #         N = len(output["s2_dates"])
-        #         if N > 50:
-        #             random_indices = torch.randperm(N)[:50]
-        #             output["s2"] = output["s2"][random_indices]
-        #             output["s2_dates"] = output["s2_dates"][random_indices]
-
+        # B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12
         if "s2-mono" in self.modalities:
             with rasterio.open(self.path  / "s2_tiles_labeled" / name) as f:
                 numpy_array = f.read()

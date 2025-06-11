@@ -1,16 +1,16 @@
 defaults:
-  - train_transform: Soca
-  - test_transform: TreeSAT
+  - train_transform: SocaPT
+  - test_transform: SocaPT
   - _self_
 
-name: SocaDataset
+name: SocaPT
 global_batch_size: 2
-num_classes: 15
+num_classes: 2
 mono_strict: False
 
 train_dataset:
   _partial_: true
-  _target_: data.SocaDataset.SocaDataset
+  _target_: data.SocaPT.SocaDataset
   path: ${data_dir}
   split: train
   transform: ${dataset.train_transform}
@@ -20,7 +20,7 @@ train_dataset:
 
 val_dataset:
   _partial_: true
-  _target_: data.TreeSAT.TreeSAT
+  _target_: data.SocaPT.SocaDataset
   path: ${data_dir}
   split: val
   transform: ${dataset.test_transform}
@@ -31,7 +31,7 @@ val_dataset:
 
 test_dataset:
   _partial_: true
-  _target_: data.TreeSAT.TreeSAT
+  _target_: data.SocaPT.SocaDataset
   path: ${data_dir}
   split: test
   transform: ${dataset.test_transform}
@@ -40,18 +40,4 @@ test_dataset:
   modalities: ${modalities}
   mono_strict: ${dataset.mono_strict}
 
-classes: ["Abies",
-            "Acer",
-            "Alnus",
-            "Betula",
-            "Cleared",
-            "Fagus",
-            "Fraxinus",
-            "Larix",
-            "Picea",
-            "Pinus",
-            "Populus",
-            "Prunus",
-            "Pseudotsuga",
-            "Quercus",
-            "Tilia"]
+classes: ["River"]

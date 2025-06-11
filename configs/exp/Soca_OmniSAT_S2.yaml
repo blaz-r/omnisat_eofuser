@@ -10,10 +10,9 @@ defaults:
   - override /model/loss: OmniSAT
 
 model:
-  name: "OmniSAT_soca"
+  name: "OmniSAT_soca_s2"
   optimizer:
     lr: 1e-4
 
 modalities:
-  - "aerial"
-  - "s2-mono"
+   - "s2-mono"

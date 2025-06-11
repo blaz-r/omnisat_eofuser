@@ -1,8 +1,9 @@
+from pathlib import Path
+
 from torch.utils.data import Dataset
 import h5py
 import numpy as np
 import json
-from data.utils import subset_dict_by_filename, filter_labels_by_threshold
 from skmultilearn.model_selection import iterative_train_test_split
 import torch
 import rasterio
@@ -94,14 +95,13 @@ class SocaDataset(Dataset):
             partition (float): proportion of the dataset to keep
             mono_strict (bool): if True, puts monodate in same condition as multitemporal
         """
-        self.path = path
+        self.path = Path(path)
         self.transform = transform
         self.partition = partition
         self.modalities = modalities
         self.mono_strict = mono_strict
-        data_path = path + split + "_filenames.lst"
-        with open(data_path, "r") as file:
-            self.data_list = [line.strip() for line in file.readlines()]
+        data_path = Path(self.path) / "s2_tiles"
+        self.data_list = [line.name for line in data_path.glob("*")]
         self.collate_fn = collate_fn
 
     def __getitem__(self, i):
@@ -116,62 +116,18 @@ class SocaDataset(Dataset):
         output = {"name": name}
 
         if "aerial" in self.modalities:
-            with rasterio.open(self.path + "aerial/" + name) as f:
-                output["aerial"] = torch.FloatTensor(f.read())
+            with rasterio.open(self.path  / "drone_tiles" / name) as f:
+                aer_rgba = torch.FloatTensor(f.read())
+                output["aerial"] = aer_rgba[:3, ...]
 
-        # with h5py.File(
-        #     self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-        # ) as file:
-        #     if "s2" in self.modalities:
-        #         output["s2"] = torch.tensor(file["sen-2-data"][:])
-        #         output["s2_dates"] = day_number_in_year(
-        #             file["sen-2-products"][:], place=2
-        #         )
-        #         N = len(output["s2_dates"])
-        #         if N > 50:
-        #             random_indices = torch.randperm(N)[:50]
-        #             output["s2"] = output["s2"][random_indices]
-        #             output["s2_dates"] = output["s2_dates"][random_indices]
-
+        # B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12
         if "s2-mono" in self.modalities:
-            with rasterio.open(self.path + "s2/60m/" + name) as f:
+            with rasterio.open(self.path  / "s2_tiles" / name) as f:
                 numpy_array = f.read()
             numpy_array = numpy_array.astype(np.float32)
             output["s2-mono"] = torch.FloatTensor(numpy_array)
             if self.mono_strict:
                 output["s2-mono"] = output["s2-mono"][:10, :, :]
-
-        if "s2-4season-median" in self.modalities:
-            with h5py.File(
-                self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-            ) as file:
-                output_inter = torch.tensor(file["sen-2-data"][:])
-                dates = day_number_in_year(file["sen-2-products"][:], place=2)
-            l = []
-            for i in range(4):
-                mask = (dates >= 92 * i) & (dates < 92 * (i + 1))
-                if sum(mask) > 0:
-                    r, _ = torch.median(output_inter[mask], dim=0)
-                    l.append(r)
-                else:
-                    l.append(
-                        torch.zeros(
-                            (
-                                output_inter.shape[1],
-                                output_inter.shape[-2],
-                                output_inter.shape[-1],
-                            )
-                        )
-                    )
-            output["s2-4season-median"] = torch.cat(l)
-
-        if "s2-median" in self.modalities:
-            with h5py.File(
-                self.path + "sentinel/" + ".".join(name.split(".")[:-1]) + ".h5", "r"
-            ) as file:
-                output["s2-median"], _ = torch.median(
-                    torch.tensor(file["sen-2-data"][:]), dim=0
-                )
 
         return self.transform(output)
 

@@ -9,11 +9,19 @@ defaults:
   - override /model/test_metrics: metrics_contrastif
   - override /model/loss: OmniSAT
 
+#fast_dev_run: True
+max_epochs: 10
+
+trainer:
+  num_workers: 0
+
+dataset:
+  global_batch_size: 4
+
 model:
-  name: "OmniSAT_soca"
+  name: "OmniSAT_soca_aer"
   optimizer:
     lr: 1e-4
 
 modalities:
   - "aerial"
-  - "s2-mono"
