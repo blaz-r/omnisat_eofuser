@@ -117,10 +117,19 @@ class SocaDataset(Dataset):
 
         if "aerial" in self.modalities:
             with rasterio.open(self.path  / "drone_tiles_labeled" / name) as f:
-                output["aerial"] = torch.FloatTensor(f.read())
+                aerial = torch.FloatTensor(f.read())
+                output["aerial"] = aerial
 
         with rasterio.open(self.path / "mask_tiles_labeled" / name) as f:
-            output["label"] = torch.FloatTensor(f.read()) / 255
+            label = torch.FloatTensor(f.read()) # in range 0 - 1
+            # remove padded 255 vals:
+            label[label == 255] = 0
+            if "aerial" in self.modalities:
+                # 1 where all pixels are white or blank
+                invalid_mask = (aerial == 255).all(dim=0, keepdim=True).type(torch.int32) + (aerial == 0).all(dim=0, keepdim=True).type(torch.int32)
+                # remove invalid from label, then subtract invalid to get: 0-no river, 1-river, -1 - invalid.
+                masked_label = label * (1 - invalid_mask) - invalid_mask
+            output["label"] = masked_label
 
         # B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12
         if "s2-mono" in self.modalities:

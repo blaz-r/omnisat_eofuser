@@ -9,7 +9,7 @@ defaults:
   - override /model/test_metrics: metrics_seg_pangaea
   - override /model/loss: CrossEntropyIgnore
 
-fast_dev_run: True
+#fast_dev_run: True
 max_epochs: 10
 
 trainer:

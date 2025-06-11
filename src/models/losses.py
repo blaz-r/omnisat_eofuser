@@ -53,7 +53,7 @@ class CrossEntropyIgnore(nn.Module):
             label = y["label"].flatten(1)
         else:
             label = y["label"]
-        return {"cross_entropy_loss": nn.functional.cross_entropy(x, label.long())}
+        return {"cross_entropy_loss": nn.functional.cross_entropy(x, label.long(), ignore_index=-1)}
     
 class BCEWithLogs(nn.Module):
     def __init__(self):

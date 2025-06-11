@@ -274,6 +274,8 @@ class SegPangaea(Metric):
             "mIoU": miou,
             "mF1": mf1,
             "mAcc": macc,
+            "IoU-1": iou[1],
+            "f1-1": f1[1],
         }
 
         return metrics
