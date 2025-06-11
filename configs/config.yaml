@@ -2,7 +2,7 @@
 
 defaults:
   - _self_
-  - dataset: Soca.yaml
+  - dataset: TreeSAT.yaml
   - model: Classif.yaml
   - callbacks: default.yaml
   - logger: wandb.yaml
@@ -37,3 +37,5 @@ max_epochs: 200
 offline: False
 modalities: []
 experiment_name: ${dataset.name}_${model.name}
+
+fast_dev_run: False

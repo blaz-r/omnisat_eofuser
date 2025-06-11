@@ -12,6 +12,7 @@ trainer:
   num_nodes: 1
   check_val_every_n_epoch: 1
   deterministic: False # set True to to ensure deterministic results, makes training slower but gives more reproducibility than just setting seeds
+  fast_dev_run: ${fast_dev_run}
 
 devices: 1
 num_workers: 8
