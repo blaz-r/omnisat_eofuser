@@ -1,0 +1,43 @@
+defaults:
+  - train_transform: Soca
+  - test_transform: Soca
+  - _self_
+
+name: SocaFT
+global_batch_size: 2
+num_classes: 2
+mono_strict: False
+
+train_dataset:
+  _partial_: true
+  _target_: data.SocaFT.SocaDataset
+  path: ${data_dir}
+  split: train
+  transform: ${dataset.train_transform}
+  partition: ${partition}
+  modalities: ${modalities}
+  mono_strict: ${dataset.mono_strict}
+
+val_dataset:
+  _partial_: true
+  _target_: data.SocaFT.SocaDataset
+  path: ${data_dir}
+  split: val
+  transform: ${dataset.test_transform}
+  classes: ${dataset.classes}
+  partition: 1.0
+  modalities: ${modalities}
+  mono_strict: ${dataset.mono_strict}
+
+test_dataset:
+  _partial_: true
+  _target_: data.SocaFT.SocaDataset
+  path: ${data_dir}
+  split: test
+  transform: ${dataset.test_transform}
+  classes: ${dataset.classes}
+  partition: 1.0
+  modalities: ${modalities}
+  mono_strict: ${dataset.mono_strict}
+
+classes: ["River"]

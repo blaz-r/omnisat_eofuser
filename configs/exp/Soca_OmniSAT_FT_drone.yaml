@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - override /dataset: SocaFT
+  - override /model: SemSeg
+  - override /model/network: Fine_tuning_SemSeg
+  - override /model/train_metrics: metrics_seg_pangaea
+  - override /model/val_metrics: metrics_seg_pangaea
+  - override /model/test_metrics: metrics_seg_pangaea
+  - override /model/loss: CrossEntropyIgnore
+
+#fast_dev_run: True
+max_epochs: 10
+
+trainer:
+  num_workers: 0
+
+dataset:
+  global_batch_size: 4
+
+model:
+  name: "OmniSAT_soca_droneFT"
+  optimizer:
+    lr: 1e-4
+
+modalities:
+  - "aerial"
+  # - "s2"
+  # - "s1-asc"

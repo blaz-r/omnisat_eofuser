@@ -68,6 +68,25 @@ class TransformSoca(object):
         return batch
 
 
+class TransformSocaFT(object):
+    def __init__(self, p=0.0, size=300):
+        self.p = p
+        self.resize = torchvision.transforms.v2.Resize(size=[size, size])
+
+    def __call__(self, batch):
+        keys = list(batch.keys())
+        # keys.remove("label")
+        keys.remove("name")
+
+        if "aerial" in keys:
+            batch["aerial"] = self.resize(batch["aerial"])
+        # if "s2-mono" in keys:
+        #     batch["s2-mono"] = self.resize(batch["s2-mono"])
+        batch["label"] = self.resize(batch["label"])
+
+        return batch
+
+
 class TransformMAE(object):
     def __init__(self, p=0.5, size=224, s2_size=0):
         self.p = p
