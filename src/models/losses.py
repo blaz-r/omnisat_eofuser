@@ -115,13 +115,16 @@ class MILNCE(nn.Module):
                 dim=1,
             )
         )
+        if torch.isnan(loss) or torch.isinf(loss):
+            loss = torch.tensor(0, dtype=torch.float32)
 
         # Get the positive examples
         idx = torch.tensor([[i + j * n_tokens for j in range(self.n_modalities) if not (k == j)] for k in range (self.n_modalities) 
                             for i in range(n_tokens)]).to(features.device)
         pos_logits = torch.gather(logits, 1, idx)
 
-        loss += torch.sum(-torch.logsumexp(pos_logits / self.tau, dim=1))
+        if not (torch.isnan(loss) or torch.isinf(loss)):
+            loss += torch.sum(-torch.logsumexp(pos_logits / self.tau, dim=1))
         return {
             "contrastive_loss": loss / len(features),
             "logits": logits
@@ -322,6 +325,36 @@ class ReconstructionLossAerial(nn.Module):
         loss = (pred - target) ** 2
         loss = loss.mean()
         return loss
+
+
+class ReconstructionLossAerialMasked(nn.Module):
+    def __init__(self, patch_size = 50):
+        super(ReconstructionLossAerialMasked, self).__init__()
+        self.patch_size = patch_size
+
+    def patchify(self, x):
+        x = x.unfold(2, self.patch_size, self.patch_size).unfold(3, self.patch_size, self.patch_size)
+        x = x.flatten(2, 3)
+        x = torch.permute(x,(0,2,1,3,4))
+        return x
+
+    def forward(self, pred, y, inval_mask):
+        """
+        Args:
+            pred: torch.Tensor BxN_patchesxC
+            y: ground truth tensor BxTxHxWxC
+        Returns:
+            torch.Tensor: Reconstruction loss for sentinel data
+        """
+        target = self.patchify(y)
+        mean = target.mean(dim=(2, 3, 4), keepdim=True)
+        var = target.var(dim=(2, 3, 4), keepdim=True)
+        target = (target - mean) / (var + 1.e-6)**.5
+        valid_mask = 1 - self.patchify(inval_mask)
+        loss = (pred - target) ** 2
+        loss = valid_mask * loss
+        loss = loss.mean()
+        return loss
         
 
 class ReconstructionMaskLossSentinel(nn.Module):
@@ -473,6 +506,34 @@ class MAEReconstructionLossPastis(nn.Module):
                 out['_'.join([modality, 'reconstruction_loss'])] = getattr(self, '_'.join(['loss', modality]))(recons[
                                 '_'.join(['reconstruct', modality])], y[modality], mask[:, i * n_tokens:(i+1) * n_tokens])
         return out
+
+class MAEReconstructionLossMasked(nn.Module):
+    def __init__(self, modalities, patch_size):
+        super(MAEReconstructionLossMasked, self).__init__()
+        modality_to_loss = {"aerial": ReconstructionLossAerialMasked, "s2": ReconstructionMaskLossSentinel,
+                            "s1-asc": ReconstructionMaskLossSentinel, "s1-des": ReconstructionMaskLossSentinel,
+                            "s1": ReconstructionMaskLossSentinel, "s1-mono": ReconstructionMonoLossSentinel,
+                            "s2-mono": ReconstructionMonoLossSentinel,
+                            }
+        self.modalities = modalities
+        for i in range(len(modalities)):
+            if modalities[i] == 'aerial':
+                setattr(self, '_'.join(['loss', modalities[i]]), modality_to_loss[modalities[i]](patch_size))
+            else:
+                setattr(self, '_'.join(['loss', modalities[i]]), modality_to_loss[modalities[i]]())
+
+    def forward(self, x, y):
+        recons, mask = x
+        out = {}
+        n_tokens = mask.shape[1] // len(self.modalities)
+        for i, modality in enumerate(self.modalities):
+            if modality == 'aerial':
+                out['_'.join([modality, 'reconstruction_loss'])] = getattr(self, '_'.join(['loss', modality]))(recons[
+                                                                    '_'.join(['reconstruct', modality])], y[modality], y["invalid_mask"])
+            else:
+                out['_'.join([modality, 'reconstruction_loss'])] = getattr(self, '_'.join(['loss', modality]))(recons[
+                                '_'.join(['reconstruct', modality])], y[modality], mask[:, i * n_tokens:(i+1) * n_tokens])
+        return out
     
 class MultiCrossEntropy(nn.Module):
     def __init__(self, modalities):
@@ -499,6 +560,7 @@ LOSSES = {
     "bce": BCEWithLogs,
     "mil-nce": MILNCE,
     "mae-loss": MAEReconstructionLoss,
+    "mae-loss-mask": MAEReconstructionLossMasked,
     "mae-loss_pastis": MAEReconstructionLossPastis,
     "crossentropyignore": CrossEntropyIgnore,
 }
@@ -526,7 +588,7 @@ class Losses(nn.Module):
         for m, v in mix.items():
             m = m.lower()
             try:
-                if m == "mae-loss" or m == "mae-loss_pastis":
+                if m.startswith("mae-loss"):
                     self.loss[m] = (LOSSES[m](modalities, patch_size), v)
                 elif m in ["mil-nce", "multicrossentropy", "multicrossentropy-pastis"]:
                     self.loss[m] = (LOSSES[m](modalities), v)

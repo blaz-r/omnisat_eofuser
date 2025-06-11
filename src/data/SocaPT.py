@@ -113,12 +113,17 @@ class SocaDataset(Dataset):
             dict: dictionary with keys "label", "name" and the other corresponding to the modalities used
         """
         name = self.data_list[i]
-        output = {"name": name}
+        output = {"name": name, "invalid_mask": None}
 
         if "aerial" in self.modalities:
             with rasterio.open(self.path  / "drone_tiles" / name) as f:
                 aer_rgba = torch.FloatTensor(f.read())
+                aerial = aer_rgba[:3]
                 output["aerial"] = aer_rgba[:3, ...]
+
+            # 1 where all pixels are white or blank
+            invalid_mask = (aerial == 255).all(dim=0, keepdim=True).type(torch.int32) + (aerial == 0).all(dim=0,keepdim=True).type(torch.int32)
+            output["invalid_mask"] = invalid_mask
 
         # B02,B03,B04,B05,B06,B07,B08,B8A,B11,B12
         if "s2-mono" in self.modalities:

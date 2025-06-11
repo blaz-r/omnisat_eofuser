@@ -55,6 +55,8 @@ class TransformSocaPT(object):
             batch["aerial"] = self.resize(batch["aerial"])
         if "s2-mono" in keys:
             batch["s2-mono"] = self.resize_s2(batch["s2-mono"])
+        if "invalid_mask" in keys:
+            batch["invalid_mask"] = self.resize(batch["invalid_mask"])
 
         if random.random() < self.p:
             for key in keys:
