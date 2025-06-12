@@ -31,6 +31,12 @@ model:
   optimizer:
     lr: 1e-4
 
+callbacks:
+  early_stopping:
+    monitor: "val/mF1"
+    mode: "max"
+    patience: 10
+
 modalities:
   - "aerial"
   # - "s2"

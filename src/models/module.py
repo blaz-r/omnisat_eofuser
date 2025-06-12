@@ -59,6 +59,7 @@ class Module(LightningModule):
                 sync_dist=True,
                 on_step=False,
                 on_epoch=True,
+                prog_bar=True,
             )
 
     @torch.no_grad()
@@ -84,6 +85,7 @@ class Module(LightningModule):
                 sync_dist=True,
                 on_step=False,
                 on_epoch=True,
+                prog_bar=True,
             )
 
     def configure_optimizers(self):
