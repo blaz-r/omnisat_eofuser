@@ -143,7 +143,73 @@ class PatchEmbed(nn.Module):
                 x = x.flatten(2).transpose(1, 2)  # NCHW -> NLC
             x = self.norm(x)
         return x
-    
+
+
+class PatchEmbedHiRes(nn.Module):
+    """ 2D Image to Patch Embedding
+    """
+    def __init__(
+            self,
+            patch_size: int = 16,
+            in_chans: int = 3,
+            embed_dim: int = 768,
+            norm_layer: Optional[Callable] = None,
+            flatten: bool = True,
+            bias: bool = True,
+            res: bool = False,
+            gp_norm: int = 4
+    ):
+        super().__init__()
+        patch_size = (patch_size, patch_size)
+        self.patch_size = patch_size
+        self.flatten = flatten
+        bias = not bias
+        if res:
+            self.proj = nn.ModuleList([nn.Conv2d(in_chans, embed_dim, kernel_size=3, stride=1, padding="same", bias=True),
+                            nn.BatchNorm2d(embed_dim),
+                            nn.GELU(),
+                            nn.MaxPool2d(kernel_size=2, stride=None, return_indices=True),
+                            ResidualBlock(embed_dim, embed_dim, gp_norm, stride=[1, 1]),
+                            nn.MaxPool2d(kernel_size=2, stride=None, return_indices=True),
+                            ResidualBlock(embed_dim, embed_dim, gp_norm, stride=[1, 1]),
+                            nn.MaxPool2d(kernel_size=2, stride=None, return_indices=True),
+                            ResidualBlock(embed_dim, embed_dim, gp_norm, stride=[1, 1]),
+                            nn.MaxPool2d(kernel_size=2, stride=None, return_indices=True)])
+            self.max_pools = [False, False, False, True, False, True, False, True, False, True]
+        else:
+            self.proj = nn.Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size, bias=bias)
+        self.embed_dim = embed_dim
+        self.norm = norm_layer(embed_dim) if norm_layer else nn.Identity()
+        self.res = res
+
+    def forward(self, x):
+        B, C, H, W = x.shape
+        if self.res:
+            grid_size = (H // self.patch_size[0], W // self.patch_size[1])
+            num_patches = grid_size[0] * grid_size[1]
+            x = x.unfold(2, self.patch_size[0], self.patch_size[0]).unfold(3, self.patch_size[1], self.patch_size[1])
+            x = x.flatten(2, 3)
+            x = torch.permute(x,(0,2,1,3,4))
+            x = x.flatten(0,1)
+            indices = []
+            sizes = []
+            for i in range (len(self.proj)):
+                sizes.insert(0, x.shape)
+                if self.max_pools[i]:
+                    x, indice = self.proj[i](x)
+                    indices.insert(0, indice)
+                else:
+                    x = self.proj[i](x)
+            x = torch.reshape(x, (B, num_patches, self.embed_dim, 1, 1)).squeeze()
+            return x, indices, sizes
+        else:
+            x = self.proj(x)
+            if self.flatten:
+                x = x.flatten(2).transpose(1, 2)  # NCHW -> NLC
+            x = self.norm(x)
+        return x
+
+
 class PatchEmbed1(nn.Module):
     """ 2D Image to Patch Embedding
     """

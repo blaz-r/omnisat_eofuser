@@ -62,8 +62,10 @@ class Fine(nn.Module):
 
             # torch.save(d, '/home/filip/OmniSat/logs/TreeSat_OmniSAT/checkpoints/omnisat_state_dict.pth')
 
+            print("Loading weights")
             if not(proj_only):
-                encoder.load_state_dict(d)
+                m, u = encoder.load_state_dict(d)
+                print(f"Loaded weights.\nMissing: {m},\nUnexpected: {u}")
             else:
                 encoder.load_state_dict(d, strict=False)
 

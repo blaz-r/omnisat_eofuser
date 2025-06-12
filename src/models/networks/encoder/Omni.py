@@ -37,6 +37,7 @@ class OmniModule(nn.Module):
         projectors: dict = {},
         modalities: list = [],
         num_patches: int = 0,
+        num_s2_patches: int = None,
         embed_dim: int = 768,
         depth: int = 12,
         num_heads: int = 12,
@@ -60,11 +61,17 @@ class OmniModule(nn.Module):
 
         self.num_prefix_tokens = 1 if class_token else 0
         self.num_patches = num_patches + self.num_prefix_tokens
+        if num_s2_patches is not None:
+            self.num_s2_patches = num_s2_patches + self.num_prefix_tokens
+        else:
+            self.num_s2_patches = num_patches + self.num_prefix_tokens
 
         self.cls_token = (
             nn.Parameter(torch.zeros(1, 1, embed_dim)) if class_token else None
         )
+        self.pos_embed_s2 = nn.Parameter(torch.zeros(1, self.num_s2_patches, embed_dim))
         self.pos_embed = nn.Parameter(torch.zeros(1, self.num_patches, embed_dim))
+
         self.pos_drop = nn.Dropout(p=pos_drop_rate)
         self.norm_pre = norm_layer(embed_dim) if pre_norm else nn.Identity()
         norm_layer = norm_layer or partial(nn.LayerNorm, eps=1e-6)
@@ -118,6 +125,7 @@ class OmniModule(nn.Module):
             ]
         )
         trunc_normal_(self.pos_embed, std=0.02)
+        trunc_normal_(self.pos_embed_s2, std=0.02)
         trunc_normal_(self.cls_token, std=0.02)
 
     def forward_proj(self, x):
@@ -131,6 +139,9 @@ class OmniModule(nn.Module):
                 out["_".join(["tokens", modality])], out["indices"], out["sizes"] = (
                     getattr(self, "_".join(["projector", modality]))(x[modality])
                 )
+                tokens.append(
+                    out["_".join(["tokens", modality])] + self.pos_embed[:, 1:, :]
+                )
             elif modality.split("-")[-1] == "mono":
                 sentinel_tokens, out["_".join(["attention", modality])] = getattr(
                     self, "_".join(["projector", modality])
@@ -141,17 +152,17 @@ class OmniModule(nn.Module):
                 out["_".join(["tokens", modality])] = sentinel_tokens.view(
                     sentinel_tokens.shape[0], sentinel_tokens.shape[1], -1
                 ).permute(0, 2, 1)
-            else:
-                out["_".join(["dates", modality])] = x["_".join([modality, "dates"])]
-                sentinel_tokens, out["_".join(["attention", modality])] = getattr(
-                    self, "_".join(["projector", modality])
-                )(x[modality], x["_".join([modality, "dates"])])
-                out["_".join(["tokens", modality])] = sentinel_tokens.view(
-                    sentinel_tokens.shape[0], sentinel_tokens.shape[1], -1
-                ).permute(0, 2, 1)
-            tokens.append(
-                out["_".join(["tokens", modality])] + self.pos_embed[:, 1:, :]
-            )
+                tokens.append(
+                    out["_".join(["tokens", modality])] + self.pos_embed[:, 1:, :]
+                )
+            # else:
+            #     out["_".join(["dates", modality])] = x["_".join([modality, "dates"])]
+            #     sentinel_tokens, out["_".join(["attention", modality])] = getattr(
+            #         self, "_".join(["projector", modality])
+            #     )(x[modality], x["_".join([modality, "dates"])])
+            #     out["_".join(["tokens", modality])] = sentinel_tokens.view(
+            #         sentinel_tokens.shape[0], sentinel_tokens.shape[1], -1
+            #     ).permute(0, 2, 1)
         tokens = torch.cat(tokens, dim=1)
         return tokens, out
 
@@ -181,18 +192,19 @@ class OmniModule(nn.Module):
                 token, _, _ = getattr(self, "_".join(["projector", modality]))(
                     x[modality]
                 )
+                tokens.append(token + self.pos_embed[:, 1:, :])
             elif modality.split("-")[-1] == "mono":
                 token, _ = getattr(self, "_".join(["projector", modality]))(
                     x[modality].unsqueeze(1),
                     torch.zeros(x[modality].shape[0], 1).to(x[modality].device) + 120,
                 )
                 token = token.view(token.shape[0], token.shape[1], -1).permute(0, 2, 1)
-            else:
-                token, _ = getattr(self, "_".join(["projector", modality]))(
-                    x[modality], x["_".join([modality, "dates"])]
-                )
-                token = token.view(token.shape[0], token.shape[1], -1).permute(0, 2, 1)
-            tokens.append(token + self.pos_embed[:, 1:, :])
+                tokens.append(token + self.pos_embed_s2[:, 1:, :])
+            # else:
+            #     token, _ = getattr(self, "_".join(["projector", modality]))(
+            #         x[modality], x["_".join([modality, "dates"])]
+            #     )
+            #     token = token.view(token.shape[0], token.shape[1], -1).permute(0, 2, 1)
 
         tokens = torch.cat(tokens, dim=1)
         if self.cls_token is not None:
