@@ -1,0 +1,3 @@
+visualiser:
+  _target_: utils.callbacks.visualiser.Visualiser
+  res_path: ${paths.output_dir}/visual

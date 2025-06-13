@@ -9,6 +9,7 @@ defaults:
   - override /model/val_metrics: metrics_seg_pangaea
   - override /model/test_metrics: metrics_seg_pangaea
   - override /model/loss: CrossEntropyIgnore
+  - override /callbacks: default_visual
 
 #fast_dev_run: True
 max_epochs: 10

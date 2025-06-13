@@ -1,0 +1,7 @@
+defaults:
+  - default.yaml
+  - visualiser.yaml
+  - _self_
+
+visualiser:
+  res_path: ${paths.output_dir}/visual

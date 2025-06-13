@@ -72,6 +72,9 @@ class Module(LightningModule):
         else:
             self.test_metrics.update(pred, batch)
 
+        batch["pred"] = pred
+        return batch
+
     def on_test_epoch_end(self):
         metrics = self.test_metrics.compute()
         if "results" in metrics.keys():
