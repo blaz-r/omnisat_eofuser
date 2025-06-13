@@ -245,6 +245,9 @@ class SegPangaea(Metric):
         self.confusion_matrix = self.confusion_matrix.to(pred.device)
         self.confusion_matrix += count.view(self.num_classes, self.num_classes)
 
+    def reset(self) -> None:
+        self.confusion_matrix = torch.zeros(self.num_classes, self.num_classes)
+
     def compute(self):
         # Calculate IoU for each class
         intersection = torch.diag(self.confusion_matrix)

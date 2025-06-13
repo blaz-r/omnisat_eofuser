@@ -2,6 +2,7 @@ import torch
 import random
 import torchvision
 import torchvision.transforms.v2.functional as TF
+from torchvision.transforms import InterpolationMode
 
 
 class Identity(object):
@@ -44,6 +45,7 @@ class TransformSocaPT(object):
     def __init__(self, p=0.0, size=300, size_s2=10):
         self.p = p
         self.resize = torchvision.transforms.v2.Resize(size=[size, size])
+        self.resize_lbl = torchvision.transforms.v2.Resize(size=[size, size], interpolation=InterpolationMode.NEAREST)
         self.resize_s2 = torchvision.transforms.v2.Resize(size=[size_s2, size_s2])
 
     def __call__(self, batch):
@@ -56,7 +58,7 @@ class TransformSocaPT(object):
         if "s2-mono" in keys:
             batch["s2-mono"] = self.resize_s2(batch["s2-mono"])
         if "invalid_mask" in keys:
-            batch["invalid_mask"] = self.resize(batch["invalid_mask"])
+            batch["invalid_mask"] = self.resize_lbl(batch["invalid_mask"])
 
         if random.random() < self.p:
             for key in keys:
@@ -77,6 +79,7 @@ class TransformSocaFT(object):
     def __init__(self, p=0.0, size=300, size_s2=10):
         self.p = p
         self.resize = torchvision.transforms.v2.Resize(size=[size, size])
+        self.resize_lbl = torchvision.transforms.v2.Resize(size=[size, size], interpolation=InterpolationMode.NEAREST)
         self.resize_s2 = torchvision.transforms.v2.Resize(size=[size_s2, size_s2])
 
     def __call__(self, batch):
@@ -88,7 +91,7 @@ class TransformSocaFT(object):
             batch["aerial"] = self.resize(batch["aerial"])
         if "s2-mono" in keys:
             batch["s2-mono"] = self.resize_s2(batch["s2-mono"])
-        batch["label"] = self.resize(batch["label"])
+        batch["label"] = self.resize_lbl(batch["label"])
 
         return batch
 
