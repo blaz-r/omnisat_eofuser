@@ -281,4 +281,6 @@ class SegPangaea(Metric):
             "f1-1": f1[1],
         }
 
+        self.reset()
+
         return metrics

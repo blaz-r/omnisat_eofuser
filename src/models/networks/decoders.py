@@ -217,6 +217,41 @@ class DecoderDeconvAerial(nn.Module):
                 x = self.decode[i](x, output_size=sizes[i])
         x = x.view(shape[0], shape[1], x.shape[1], x.shape[2], x.shape[3])
         return x
+
+class DecoderDeconvAerialHiRes(nn.Module):
+    """
+    Decoder for aerial data with deconvolutions and use of index of maxpools from projector to unpool
+    """
+    def __init__(self,
+                 in_channels: int = 10,
+                 embed_dim: int = 128
+                 ):
+        super(DecoderDeconvAerialHiRes, self).__init__()
+        self.decode = nn.ModuleList([nn.MaxUnpool2d(kernel_size=2, stride=None),
+            nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.MaxUnpool2d(kernel_size=2, stride=None),
+            nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.MaxUnpool2d(kernel_size=2, stride=None),
+            nn.ConvTranspose2d(embed_dim, embed_dim, kernel_size=3, stride=1, padding=1, bias=False),
+            nn.MaxUnpool2d(kernel_size=2, stride=None),
+            nn.ConvTranspose2d(embed_dim, in_channels, kernel_size=3, stride=1, padding=1, bias=True)
+            ])
+        self.max_depools = [True, False, True, False, True, False, True, False]
+
+    def forward(self, x, indices, sizes):
+        del sizes[-3]
+        del sizes[-2]
+        c = 0
+        shape = x.shape
+        x = x.unsqueeze(-1).unsqueeze(-1).flatten(0,1)
+        for i in range (len(self.decode)):
+            if self.max_depools[i]:
+                x = self.decode[i](x, indices[c], output_size=sizes[i])
+                c += 1
+            else:
+                x = self.decode[i](x, output_size=sizes[i])
+        x = x.view(shape[0], shape[1], x.shape[1], x.shape[2], x.shape[3])
+        return x
     
 class DecoderDeconvAerialPastis(nn.Module):
     """

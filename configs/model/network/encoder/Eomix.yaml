@@ -2,8 +2,8 @@ _target_: models.networks.encoder.Omni.OmniModule
 modalities: ${modalities}
 projectors:
   aerial:
-    _target_: models.networks.encoder.utils.patch_embeddings.PatchEmbedHiRes
-    patch_size: 16
+    _target_: models.networks.encoder.utils.patch_embeddings.PatchEmbed
+    patch_size: 50
     in_chans: 3
     embed_dim: 256
     bias: ${model.network.encoder.pre_norm}
@@ -82,7 +82,6 @@ projectors:
     return_att: True
     positional_encoding: True
 
-num_s2_patches: 100
 num_patches: 1024
 embed_dim: 256
 depth: 6
