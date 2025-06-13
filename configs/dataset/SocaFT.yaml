@@ -22,7 +22,7 @@ val_dataset:
   _partial_: true
   _target_: data.SocaFT.SocaDataset
   path: ${data_dir}
-  split: val
+  split: test
   transform: ${dataset.test_transform}
   classes: ${dataset.classes}
   partition: 1.0

@@ -14,9 +14,10 @@ class Identity(object):
 
 
 class Transform(object):
-    def __init__(self, p=0.0, size=300):
+    def __init__(self, p=0.0, size=300, size_s2=6):
         self.p = p
-        self.crop = torchvision.transforms.v2.RandomCrop(size=[size, size])
+        self.resize = torchvision.transforms.v2.Resize(size=[size, size])
+        self.resize_s2 = torchvision.transforms.v2.Resize(size=[size_s2, size_s2])
 
     def __call__(self, batch):
         keys = list(batch.keys())
@@ -24,7 +25,9 @@ class Transform(object):
         keys.remove("name")
 
         if "aerial" in keys:
-            batch["aerial"] = self.crop(batch["aerial"])
+            batch["aerial"] = self.resize(batch["aerial"])
+        if "s2-mono" in keys:
+            batch["s2-mono"] = self.resize_s2(batch["s2-mono"])
 
         if random.random() < self.p:
             for key in keys:

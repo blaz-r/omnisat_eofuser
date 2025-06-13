@@ -95,7 +95,7 @@ class SocaDataset(Dataset):
             partition (float): proportion of the dataset to keep
             mono_strict (bool): if True, puts monodate in same condition as multitemporal
         """
-        self.path = Path(path)
+        self.path = Path(path) / split
         self.transform = transform
         self.partition = partition
         self.modalities = modalities
@@ -117,8 +117,9 @@ class SocaDataset(Dataset):
 
         if "aerial" in self.modalities:
             with rasterio.open(self.path  / "drone_tiles_labeled" / name) as f:
-                aerial = torch.FloatTensor(f.read())
-                output["aerial"] = aerial
+                aer_rgba = torch.FloatTensor(f.read())
+                aerial = aer_rgba[:3]
+                output["aerial"] = aer_rgba[:3, ...]
 
         with rasterio.open(self.path / "mask_tiles_labeled" / name) as f:
             label = torch.FloatTensor(f.read()) # in range 0 - 1
