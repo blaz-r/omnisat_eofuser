@@ -8,21 +8,12 @@ defaults:
   - override /model/test_metrics: metrics_contrastif
   - override /model/loss: OmniSAT
 
-fast_dev_run: True
-
-trainer:
-  num_workers: 0
-
-dataset:
-  mono_strict: True
-  global_batch_size: 4
-
 model:
-  name: "OmniSAT-mono"
+  name: "OmniSAT"
   optimizer:
     lr: 1e-4
 
 modalities:
-#  - "aerial"
-  - "s2-mono"
-#  - "s1-mono"
+  - "aerial"
+  # - "s2"
+  # - "s1-asc"

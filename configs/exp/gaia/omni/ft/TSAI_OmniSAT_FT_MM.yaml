@@ -22,4 +22,3 @@ callbacks:
 modalities:
   - "aerial"
   - "s2-mono"
-#  - "s1-mono"

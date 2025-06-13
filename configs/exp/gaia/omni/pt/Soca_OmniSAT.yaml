@@ -1,0 +1,34 @@
+# @package _global_
+
+defaults:
+  - override /dataset: SocaPT
+  - override /model/network: MAEOmni
+  - override /model/network/encoder: Eomix
+  - override /model/train_metrics: no_metrics
+  - override /model/val_metrics: metrics_contrastif
+  - override /model/test_metrics: metrics_contrastif
+  - override /model/loss: OmniSAT
+
+fast_dev_run: True
+
+trainer:
+  num_workers: 0
+
+dataset:
+  mono_strict: True
+  global_batch_size: 4
+  train_transform:
+    size: 300
+    size_s2: 6
+  test_transform:
+    size: 300
+    size_s2: 6
+
+model:
+  name: "Soca-OmniSAT"
+  optimizer:
+    lr: 1e-4
+
+modalities:
+  - "aerial"
+#  - "s2-mono"

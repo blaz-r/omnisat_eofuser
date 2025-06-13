@@ -1,7 +1,6 @@
 # @package _global_
 
 defaults:
-  - override /dataset: SocaPT
   - override /model/network: MAEOmni
   - override /model/network/encoder: Omni
   - override /model/train_metrics: no_metrics
@@ -9,19 +8,20 @@ defaults:
   - override /model/test_metrics: metrics_contrastif
   - override /model/loss: OmniSAT
 
-fast_dev_run: True
-max_epochs: 10
-
-trainer:
-  num_workers: 0
+#fast_dev_run: True
+#
+#trainer:
+#  num_workers: 0
 
 dataset:
-  global_batch_size: 4
+  mono_strict: True
+  global_batch_size: 100
 
 model:
-  name: "OmniSAT_soca_aer"
+  name: "TSAI-OmniSAT"
   optimizer:
     lr: 1e-4
 
 modalities:
   - "aerial"
+  - "s2-mono"

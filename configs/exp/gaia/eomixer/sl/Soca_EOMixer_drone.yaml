@@ -23,8 +23,6 @@ model:
   network:
     encoder:
       return_layers: [0, 1, 3, 5]
-#    instance:
-#      path: ${paths.log_dir}/SocaPT_OmniSAT_soca_aer/checkpoints/last.ckpt
   optimizer:
     lr: 1e-5
 

@@ -1,0 +1,39 @@
+# @package _global_
+
+defaults:
+  - override /model/network: MAEOmni
+  - override /model/network/encoder: Eomix_hr
+  - override /model/network/decoder: Eomix_hr
+  - override /model/train_metrics: no_metrics
+  - override /model/val_metrics: metrics_contrastif
+  - override /model/test_metrics: metrics_contrastif
+  - override /model/loss: OmniSAT
+
+#fast_dev_run: True
+#
+#trainer:
+#  num_workers: 0
+
+dataset:
+  mono_strict: True
+  global_batch_size: 20
+  train_transform:
+    size: 304
+    size_s2: 19
+  test_transform:
+    size: 304
+    size_s2: 19
+
+model:
+  name: "TSAI-Eomixer"
+  optimizer:
+    lr: 1e-4
+  network:
+    encoder:
+      num_patches: 361
+  loss:
+    patch_size: 16
+
+modalities:
+  - "aerial"
+  - "s2-mono"
